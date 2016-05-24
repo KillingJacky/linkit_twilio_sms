@@ -55,13 +55,27 @@ void setup()
     loadConfigfile();
     
     boolean connected = false;
+    LWiFiEncryption WiFiSec[3] = {LWIFI_OPEN, LWIFI_WPA, LWIFI_WEP};
+    String WiFiSecStr[3] = {"OPEN", "WPA", "WEP"};
+    int idx = 1;
+    int retries = 0;
     while(1)
     {
-        Serial.println("Connecting");
+        Serial.print("Connecting WiFi SSID ");
+        Serial.print(wifi_ap);
+        Serial.print(" with ");
+        Serial.println(WiFiSecStr[idx]);
         DisplayMessage(0, "Connecting", 10);
-        connected = LWiFi.connect(wifi_ap, LWiFiLoginInfo(LWIFI_WPA, wifi_password));
+
+        connected = LWiFi.connect(wifi_ap, LWiFiLoginInfo(WiFiSec[idx], wifi_password));
         if(connected)break;
         delay(1000);
+        if(++retries > 10)
+        {
+          retries = 0;
+          idx++;
+          if (idx > 2) idx = 0;
+        }
     }
     Serial.println("Wifi setup complete.\r\n");
     DisplayMessage(0, "Wifi Ok   ", 10);
@@ -99,6 +113,8 @@ void loadConfigfile(void)
     Drv.begin();
     
     myFile = Drv.open("config.txt");
+
+    memset(bufferTemp, 0xff, sizeof(bufferTemp));
     
     if(myFile)
     {
@@ -134,7 +150,7 @@ void getAccountInfo(char *buffer)
         twilio_account_sid[i] = *(ptr + 19 + i);
         i ++;
         if(i >= sizeof(twilio_account_sid)){Serial.print("TWILIO_ACCOUNT_SID is to long.\r\n");while(1);}
-        if(*(ptr + 19 + i) == '\r' && *(ptr + 19 + i + 1) == '\n')break;
+        if(*(ptr + 19 + i) == '\r' || *(ptr + 19 + i) == '\n')break;
     }
     twilio_account_sid[i] = '\0';
     //Serial.println(twilio_account_sid);
@@ -147,7 +163,7 @@ void getAccountInfo(char *buffer)
         twilio_auth_token[i] = *(ptr + 18 + i);
         i ++;
         if(i >= sizeof(twilio_auth_token)){Serial.print("TWILIO_AUTH_TOKEN is to long.\r\n");while(1);}
-        if(*(ptr + 18 + i) == '\r' && *(ptr + 18 + i + 1) == '\n')break;
+        if(*(ptr + 18 + i) == '\r' || *(ptr + 18 + i) == '\n')break;
     }
     twilio_auth_token[i] = '\0';
     //Serial.println(twilio_auth_token);
@@ -160,7 +176,7 @@ void getAccountInfo(char *buffer)
         twilio_number[i] = *(ptr + 14 + i);
         i ++;
         if(i >= sizeof(twilio_number)){Serial.print("TWILIO_NUMBER is to long.\r\n");while(1);}
-        if(*(ptr + 14 + i) == '\r' && *(ptr + 14 + i + 1) == '\n')break;
+        if(*(ptr + 14 + i) == '\r' || *(ptr + 14 + i) == '\n')break;
     }
     twilio_number[i] = '\0';
     //Serial.println(twilio_number);
@@ -173,7 +189,7 @@ void getAccountInfo(char *buffer)
         temboo_account[i] = *(ptr + 15 + i);
         i ++;
         if(i >= sizeof(temboo_account)){Serial.print("TEMBOO_ACCOUNT is to long.\r\n");while(1);}
-        if(*(ptr + 15 + i) == '\r' && *(ptr + 15 + i + 1) == '\n')break;
+        if(*(ptr + 15 + i) == '\r' || *(ptr + 15 + i) == '\n')break;
     }
     temboo_account[i] = '\0';
     //Serial.println(temboo_account);
@@ -186,7 +202,7 @@ void getAccountInfo(char *buffer)
         temboo_app_name[i] = *(ptr + 16 + i);
         i ++;
         if(i >= sizeof(temboo_app_name)){Serial.print("TEMBOO_APP_NAME is to long.\r\n");while(1);}
-        if(*(ptr + 16 + i) == '\r' && *(ptr + 16 + i + 1) == '\n')break;
+        if(*(ptr + 16 + i) == '\r' || *(ptr + 16 + i) == '\n')break;
     }
     temboo_app_name[i] = '\0';
     //Serial.println(temboo_app_name);
@@ -199,7 +215,7 @@ void getAccountInfo(char *buffer)
         temboo_app_key[i] = *(ptr + 15 + i);
         i ++;
         if(i >= sizeof(temboo_app_key)){Serial.print("TEMBOO_APP_KEY is to long.\r\n");while(1);}
-        if(*(ptr + 15 + i) == '\r' && *(ptr + 15 + i + 1) == '\n')break;
+        if(*(ptr + 15 + i) == '\r' || *(ptr + 15 + i) == '\n')break;
     }
     temboo_app_key[i] = '\0';
     //Serial.println(temboo_app_key);
@@ -212,7 +228,7 @@ void getAccountInfo(char *buffer)
         wifi_ap[i] = *(ptr + 8 + i);
         i ++;
         if(i >= sizeof(wifi_ap)){Serial.print("WIFI_AP is to long.\r\n");while(1);}
-        if(*(ptr + 8 + i) == '\r' && *(ptr + 8 + i + 1) == '\n')break;
+        if(*(ptr + 8 + i) == '\r' || *(ptr + 8 + i) == '\n')break;
     }
     wifi_ap[i] = '\0';
     //Serial.println(wifi_ap);
@@ -225,7 +241,7 @@ void getAccountInfo(char *buffer)
         wifi_password[i] = *(ptr + 14 + i);
         i ++;
         if(i >= sizeof(wifi_password)){Serial.print("WIFI_PASSWORD is to long.\r\n");while(1);}
-        if(*(ptr + 14 + i) == '\r' && *(ptr + 14 + i + 1) == '\n')break;
+        if(*(ptr + 14 + i) == '\r' || *(ptr + 14 + i) == '\n' || *(ptr + 14 + i) == 0xff)break;
     }
     wifi_password[i] = '\0';
     //Serial.println(wifi_password);
